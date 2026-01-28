@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>がん免疫療法とAIデータベース・クイズ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+<div id="app" class="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+    <!-- Header -->
+    <div class="bg-blue-600 p-6 text-white text-center">
+        <h1 class="text-xl font-bold">がん免疫療法とAIデータベース・クイズ</h1>
+        <p class="text-blue-100 text-sm mt-1">最新の医療テクノロジーを学ぼう</p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="h-2 bg-blue-100">
+        <div id="progress" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+
+    <!-- Quiz Content -->
+    <div id="quiz-container" class="p-8">
+        <!-- Start Screen -->
+        <div id="start-screen" class="text-center space-y-6">
+            <div class="text-5xl mb-4">🧬</div>
+            <h2 class="text-2xl font-bold text-slate-800">クイズに挑戦！</h2>
+            <p class="text-slate-600 leading-relaxed">
+                CRI Discovery Engineやがん免疫療法の研究動向についての10問のクイズです。
+                全問正解を目指して頑張りましょう。
+            </p>
+            <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition duration-200 shadow-lg">
+                クイズを開始する
+            </button>
+        </div>
+
+        <!-- Question Screen (Hidden initially) -->
+        <div id="question-screen" class="hidden fade-in space-y-6">
+            <div class="flex justify-between items-center text-sm font-semibold text-blue-600 uppercase tracking-wider">
+                <span id="question-number">Question 1 / 10</span>
+                <span id="score-display">Score: 0</span>
+            </div>
+            <h3 id="question-text" class="text-xl font-bold text-slate-800 leading-tight">
+                <!-- Question goes here -->
+            </h3>
+            <div id="options-container" class="grid gap-3">
+                <!-- Options go here -->
+            </div>
+            <div id="feedback" class="hidden p-4 rounded-xl text-sm leading-relaxed">
+                <!-- Rationale goes here -->
+            </div>
+            <button id="next-btn" onclick="nextQuestion()" class="hidden w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl transition">
+                次の問題へ
+            </button>
+        </div>
+
+        <!-- Result Screen (Hidden initially) -->
+        <div id="result-screen" class="hidden text-center space-y-6 fade-in">
+            <div id="result-icon" class="text-6xl"></div>
+            <h2 class="text-3xl font-bold text-slate-800">結果発表</h2>
+            <p id="result-text" class="text-xl text-slate-600"></p>
+            <div class="p-6 bg-blue-50 rounded-2xl">
+                <p class="text-sm text-blue-600 font-bold uppercase">Your Score</p>
+                <p id="final-score" class="text-5xl font-black text-blue-700"></p>
+            </div>
+            <button onclick="location.reload()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition">
+                もう一度挑戦する
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            q: "Cancer Research Institute (CRI) が新たに立ち上げた、がん免疫療法の研究を加速させるためのプラットフォームの名称は何ですか？",
+            options: ["CRI Discovery Engine", "Immunotherapy Hub", "Oncology Data Center", "CRI Bio-Network"],
+            correct: 0,
+            rationale: "CRIがスタンフォード大学などの医療機関と共同で開発した、AI対応の集中型研究プラットフォームの正式名称です。"
+        },
+        {
+            q: "「再現性プロジェクト」において、過去の研究結果のうち確実に再現できたのは何割未満でしたか？",
+            options: ["10%未満", "30%未満", "50%未満", "70%未満"],
+            correct: 2,
+            rationale: "8年間にわたる調査の結果、信頼できる形で再現できたのは研究内容の半分未満（fewer than half）であったと報告されています。"
+        },
+        {
+            q: "外部の研究者が有意義に再利用できる標準を満たしているがん研究データは、わずか何パーセントとされていますか？",
+            options: ["1%", "5%", "10%", "16%"],
+            correct: 0,
+            rationale: "公開されているデータの中でも、外部の研究者が標準的に活用できる形式のものは極めて稀（わずか1%）であると指摘されています。"
+        },
+        {
+            q: "免疫療法が「生きた療法（living therapy）」と呼ばれる理由は何ですか？",
+            options: ["患者が生存している間だけ作用するため", "免疫細胞と腫瘍が相互作用し、その効果が動的に変化するため", "生きた細菌を体内に注入するため", "副作用が生じないため"],
+            correct: 1,
+            rationale: "免疫系が腫瘍に対してリアルタイムに反応し変化し続ける性質を捉えて「生きた療法」と表現されています。"
+        },
+        {
+            q: "CRI Discovery Engineの第一段階（フェーズ1）で重点的に取り組まれるのは、どのがんの種類ですか？",
+            options: ["肺がんと乳がん", "メラノーマ（悪性黒色腫）と大腸がん", "白血病と膵臓がん", "肝臓がんと前立腺がん"],
+            correct: 1,
+            rationale: "免疫療法が大きな成果を上げつつも、まだ未解明な部分が多いこれら2つのがんが初期の焦点となります。"
+        },
+        {
+            q: "このデータベースに「失敗した治療」のデータが含まれる主な理由は何ですか？",
+            options: ["データの量を増やすため", "なぜ治療が効かないのかを理解し、偏った結論を避けるため", "製薬会社に賠償を求めるため", "研究費を削減するため"],
+            correct: 1,
+            rationale: "失敗（ネガティブな結果）を共有することで、成功例だけのバイアスを排除し、治療失敗のメカニズムを解明できるからです。"
+        },
+        {
+            q: "がん細胞と免疫細胞の相互作用をリアルタイムで捉えるのが難しかった障壁は何ですか？",
+            options: ["顕微鏡の倍率が低すぎたこと", "三次元空間での相互作用をキャプチャすることの困難さ", "がん細胞が透明で見えなかったこと", "倫理的な理由で観察が禁止されていたこと"],
+            correct: 1,
+            rationale: "三次元空間における複雑な相互作用を時間軸に沿って捉えることは技術的に困難でしたが、最新の空間シーケンシング技術で克服されつつあります。"
+        },
+        {
+            q: "研究者が個別の研究所で情報を抱え込む「サイロ化（silos）」の問題に対し、どのようなアプローチを提唱していますか？",
+            options: ["データの独占による競争の激化", "オープンアクセスとグローバルなデータ共有", "特定の大学のみへのデータ提供", "有料の会員制データベースの構築"],
+            correct: 1,
+            rationale: "機関の垣根を越え、標準化されたデータを世界中で共有することで研究のスピードを上げることを目指しています。"
+        },
+        {
+            q: "プラットフォームが「AI準備完了（AI-ready）」であるとは、具体的にどのような状態を指しますか？",
+            options: ["人間ではなくAIがすべての診断を下す状態", "計算ツールが効率的にパターンを特定できる、標準化された構造化データがある状態", "チャットボットが論文を自動執筆する状態", "すべての研究機器をロボットで操作する状態"],
+            correct: 1,
+            rationale: "AIや機械学習アルゴリズムが直接読み込み、分析しやすいようにデータが整理・標準化されていることを指します。"
+        },
+        {
+            q: "ジョン・ウェリー博士は、研究のサイロ化についてどのように述べていますか？",
+            options: ["「機関の機密を守ることが最優先だ」", "「競争がなければ科学は進歩しない」", "「情報を独占するアプローチは全員の歩みを遅らせる」", "「AIがあれば研究者は協力しなくてよい」"],
+            correct: 2,
+            rationale: "個々の利益を守ろうとする姿勢が、結果としてがん治療という共通目標への到達を遅らせていると述べています。"
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    function startQuiz() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('question-screen').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = quizData[currentQuestionIndex];
+        answered = false;
+        
+        document.getElementById('question-number').innerText = `Question ${currentQuestionIndex + 1} / ${quizData.length}`;
+        document.getElementById('question-text').innerText = q.q;
+        document.getElementById('score-display').innerText = `Score: ${score}`;
+        document.getElementById('progress').style.width = `${(currentQuestionIndex / quizData.length) * 100}%`;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        q.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition duration-200 font-medium text-slate-700";
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(i);
+            container.appendChild(btn);
+        });
+        
+        document.getElementById('feedback').classList.add('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+    }
+
+    function checkAnswer(index) {
+        if (answered) return;
+        answered = true;
+        
+        const q = quizData[currentQuestionIndex];
+        const isCorrect = index === q.correct;
+        const options = document.getElementById('options-container').children;
+        
+        if (isCorrect) {
+            score++;
+            options[index].classList.replace('border-slate-200', 'border-green-500');
+            options[index].classList.add('bg-green-50', 'text-green-800');
+        } else {
+            options[index].classList.replace('border-slate-200', 'border-red-500');
+            options[index].classList.add('bg-red-50', 'text-red-800');
+            options[q.correct].classList.replace('border-slate-200', 'border-green-500');
+            options[q.correct].classList.add('bg-green-50');
+        }
+
+        const feedback = document.getElementById('feedback');
+        feedback.innerText = q.rationale;
+        feedback.className = `p-4 rounded-xl text-sm leading-relaxed ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+        feedback.classList.remove('hidden');
+        
+        document.getElementById('next-btn').classList.remove('hidden');
+        document.getElementById('score-display').innerText = `Score: ${score}`;
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById('progress').style.width = '100%';
+        document.getElementById('question-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        
+        const finalScore = document.getElementById('final-score');
+        finalScore.innerText = `${score} / ${quizData.length}`;
+        
+        const resultText = document.getElementById('result-text');
+        const icon = document.getElementById('result-icon');
+        
+        if (score === quizData.length) {
+            resultText.innerText = "完璧です！がん研究の未来に精通していますね！";
+            icon.innerText = "🏆";
+        } else if (score >= 7) {
+            resultText.innerText = "素晴らしい！高い理解度をお持ちです。";
+            icon.innerText = "🌟";
+        } else {
+            resultText.innerText = "お疲れ様でした！もう一度復習してみましょう。";
+            icon.innerText = "📚";
+        }
+    }
+</script>
+
+</body>
+</html>
